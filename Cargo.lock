@@ -145,6 +145,7 @@ version = "0.1.0"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
+ "display-interface",
  "display-interface-spi",
  "embedded-hal",
  "fugit",
