@@ -10,131 +10,20 @@ use rp_pico::pac::spi1::sspcr0::SSPCR0_SPEC;
 use rp_pico::{hal::{Spi, spi::{Enabled, SpiDevice}, gpio::{Pin, PinId, Output, PushPull}}};
 use fugit::RateExtU32;
 
+use embedded_graphics_core::prelude::{Dimensions, Point, Size};
+use embedded_graphics_core::draw_target::DrawTarget;
+use embedded_graphics_core::primitives::Rectangle;
+use embedded_graphics_core::pixelcolor::Bgr565;
+use embedded_graphics_core::Pixel;
+
+
+use crate::interface::Interface;
+
 const ILI9486_MAD_BGR: u16 = 0x08;
 const ILI9486_MAD_MX: u16 = 0x40;
 const ILI9486_PAS: u16 = 0x2B;
 const ILI9486_CAS: u16 = 0x2A;
 const ILI9486_RAMWR: u16 = 0x2C;
-
-
-pub struct Interface<D, PID1, PID2, PID3>
-where
-    D: SpiDevice,
-    PID1: PinId,
-    PID2: PinId,
-    PID3: PinId,
-
-{
-    pub spi: Spi<Enabled, D, 16>,
-    pub cs_pin: Pin<PID1, Output<PushPull>>,
-    pub dc_pin: Pin<PID2, Output<PushPull>>,
-    pub rst_pin: Pin<PID3, Output<PushPull>>,
-
-}
-
-impl<D, PID1, PID2, PID3> Interface<D, PID1, PID2, PID3>
-where
-    D: SpiDevice,
-    PID1: PinId,
-    PID2: PinId,
-    PID3: PinId,
-{
-    fn begin_write(&mut self){
-        self.cs_pin.set_low().unwrap();
-    }
-
-    fn send_command(&mut self, byte: u8){
-        self.dc_pin.set_low().unwrap();
-        self.transfer8(byte);
-        self.dc_pin.set_high().unwrap();
-    }
-
-    fn quick_commmand(&mut self, word: u16){
-        self.wait_til_clear();
-        self.dc_pin.set_low().unwrap();
-        self.transfer(word);
-        self.dc_pin.set_high().unwrap();
-    }
-
-    fn transfer(&mut self, word: u16){
-        let bytes = word.to_be_bytes();
-        self.spi.write(&[word]).unwrap();
-    }
-
-
-
-    fn end_write(&mut self){
-        self.cs_pin.set_high().unwrap();
-    }
-
-    fn transfer8(&mut self, byte: u8){
-        let mut word: u16 = (byte as u16) << 8 | (byte as u16);
-        self.wait_til_clear();
-        self.spi.write(&[word]).unwrap();
-    }
-
-    pub fn write_command(&mut self, byte: u8){
-        self.wait_til_clear();
-        self.begin_write();
-        self.send_command(byte);
-        self.end_write();
-    }
-
-    pub fn write_data(&mut self, byte: u8){
-        self.wait_til_clear();
-        self.begin_write();
-        self.transfer8(byte);
-        self.end_write();
-    }
-
-    pub fn write_data_iter(&mut self, bytes: &[u8]){
-        for byte in bytes.iter() {
-            self.write_data(byte.clone());
-        }
-    }
-
-    pub fn hard_reset(&mut self, delay: &mut Delay){
-        self.rst_pin.set_low().unwrap();
-        delay.delay_ms(2);
-        self.rst_pin.set_high().unwrap();
-
-    }
-
-    fn select_window(&mut self, x0: u16, y0: u16, x1: u16, y1: u16){
-
-        self.quick_commmand(ILI9486_CAS);
-        self.transfer(x0>>8);
-        self.transfer(x0);
-        self.transfer(x1>>8);
-        self.transfer(x1);
-
-        self.quick_commmand(ILI9486_PAS);
-        self.transfer(y0>>8);
-        self.transfer(y0);
-        self.transfer(y1>>8);
-        self.transfer(y1);
-
-        self.quick_commmand(ILI9486_RAMWR);
-        
-
-    }
-
-    fn write_block(&mut self, color: u16, size: u32){
-        let mut remainder = size.clone();
-        while remainder > 0 {
-            self.transfer(color);
-            remainder -= 1;
-        }
-        
-    }
-
-
-
-    fn wait_til_clear(&mut self){
-        while(self.spi.is_busy()){}
-    }
-}
-
 
 pub struct DisplayDriver<D, PID1, PID2, PID3> 
 where
@@ -145,6 +34,41 @@ where
 {
     interface: Interface<D, PID1, PID2, PID3>
 }
+
+impl<D, PID1, PID2, PID3> Dimensions for DisplayDriver<D, PID1, PID2, PID3>
+where
+    D: SpiDevice,
+
+    PID1: PinId,
+    PID2: PinId,
+    PID3: PinId,
+{
+    fn bounding_box(&self) -> Rectangle {
+        return Rectangle { top_left: Point::new(0, 0), size: Size::new(480, 320) }
+    }
+
+}
+
+impl<D, PID1, PID2, PID3> DrawTarget for DisplayDriver<D, PID1, PID2, PID3>
+where
+    D: SpiDevice,
+
+    PID1: PinId,
+    PID2: PinId,
+    PID3: PinId,
+{
+    type Color = Bgr565;
+    type Error = core::convert::Infallible;
+    
+    fn draw_iter<I>(&mut self, drawables: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Pixel<Self::Color>>
+    {
+        todo!();
+    }
+
+}
+
 
 impl<D, PID1, PID2, PID3> DisplayDriver<D, PID1, PID2, PID3>
 where
@@ -216,9 +140,9 @@ where
 
     pub fn draw_rect(&mut self, x: u16, y: u16, w: u16, h: u16, color: u16){
         self.interface.begin_write();
-        self.interface.select_window( x, y, x+w-1, y+h-1);
+        self.select_window( x, y, x+w-1, y+h-1);
         let size: u32 = (w*h) as u32;
-        self.interface.write_block(color, size);
+        self.write_block(color, size);
         self.interface.end_write();
 
     }
@@ -226,10 +150,39 @@ where
 
     pub fn clear_screen(&mut self, color: u16){
         self.interface.begin_write();
-        self.interface.select_window( 0, 0, 319, 479);
+        self.select_window( 0, 0, 319, 479);
         let size: u32 = 480 * 320;
-        self.interface.write_block(color, size);
+        self.write_block(color, size);
         self.interface.end_write();
 
-    }   
+    }
+
+    pub fn select_window(&mut self, x0: u16, y0: u16, x1: u16, y1: u16){
+
+        self.interface.quick_command(ILI9486_CAS);
+        self.interface.transfer(x0>>8);
+        self.interface.transfer(x0);
+        self.interface.transfer(x1>>8);
+        self.interface.transfer(x1);
+
+        self.interface.quick_command(ILI9486_PAS);
+        self.interface.transfer(y0>>8);
+        self.interface.transfer(y0);
+        self.interface.transfer(y1>>8);
+        self.interface.transfer(y1);
+
+        self.interface.quick_command(ILI9486_RAMWR);
+        
+
+    }
+
+    pub fn write_block(&mut self, color: u16, size: u32){
+        let mut remainder = size.clone();
+        while remainder > 0 {
+            self.interface.transfer(color);
+            remainder -= 1;
+        }
+        
+    }
+
 }

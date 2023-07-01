@@ -206,6 +206,7 @@ dependencies = [
  "cortex-m-rt",
  "display-interface",
  "display-interface-spi",
+ "embedded-graphics-core",
  "embedded-hal",
  "fugit",
  "mipidsi",

@@ -1,24 +1,23 @@
 #![no_std]
 #![no_main]
 
-use driver::DisplayDriver;
+
 use embedded_hal::digital::v2::ToggleableOutputPin;
-use pac::SPI1;
 use rp_pico::entry;
 use rp_pico::hal;
 use rp_pico::hal::Clock;
 use rp_pico::hal::Spi;
 use rp_pico::hal::gpio;
-use rp_pico::hal::spi::Enabled;
 use rp_pico::pac;
 use embedded_hal::digital::v2::OutputPin;
 use panic_halt as _;
 use fugit::RateExtU32;
 
-use crate::driver::Interface;
+use driver::DisplayDriver;
+use crate::interface::Interface;
 
 mod driver;
-mod spiv2;
+mod interface;
 
 
 
@@ -83,11 +82,11 @@ fn main() -> ! {
 
 
     // SPI configuration
-    let mut spi = Spi::<_,_,16>::new(pac.SPI1);
+    let spi = Spi::<_,_,16>::new(pac.SPI1);
     // 20MHz is max frequency for this screen.
-    let mut spi = spi.init(&mut pac.RESETS, clocks.peripheral_clock.freq(), 20.MHz(), &embedded_hal::spi::MODE_0);
+    let spi = spi.init(&mut pac.RESETS, clocks.peripheral_clock.freq(), 20.MHz(), &embedded_hal::spi::MODE_0);
 
-    let mut interface = Interface {
+    let interface = Interface {
         spi,
         cs_pin,
         dc_pin,
