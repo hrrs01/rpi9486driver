@@ -2,6 +2,10 @@
 #![no_main]
 
 
+use embedded_graphics_core::pixelcolor::Bgr565;
+use embedded_graphics_core::pixelcolor::Rgb565;
+use embedded_graphics_core::prelude::Point;
+use embedded_graphics_core::prelude::RgbColor;
 use embedded_hal::digital::v2::ToggleableOutputPin;
 use rp_pico::entry;
 use rp_pico::hal;
@@ -15,6 +19,13 @@ use fugit::RateExtU32;
 
 use driver::DisplayDriver;
 use crate::interface::Interface;
+
+use embedded_graphics::{primitives::Circle, primitives::PrimitiveStyle};
+use embedded_graphics::prelude::Primitive;
+use embedded_graphics::{mono_font::{ascii::FONT_9X18, MonoTextStyle}, text::Text};
+
+use embedded_graphics_core::Drawable;
+
 
 mod driver;
 mod interface;
@@ -93,10 +104,14 @@ fn main() -> ! {
         rst_pin,
     };
 
-    let mut driver = DisplayDriver::new(interface);
+    let mut driver = DisplayDriver::new(interface, 480, 320, driver::Orientation::Landscape);
     driver.init(&mut delay);
     driver.clear_screen(0x00000);
-    driver.draw_rect(269, 0, 50, 480, 0x07e0);
+    
+    let mut circle = Circle::new(Point::new(50,50), 60).into_styled(PrimitiveStyle::with_fill(Rgb565::BLUE));
+    let text_style = MonoTextStyle::new(&FONT_9X18, Rgb565::RED);
+    Text::new("Hello, World!", Point::new(420, 310), text_style).draw(&mut driver).unwrap();
+    circle.draw(&mut driver).unwrap();
 
     loop {
         // rprintln!("Running...");
