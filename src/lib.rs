@@ -1,4 +1,4 @@
 #![no_std]
 
-mod driver;
-mod interface;
+pub mod driver;
+pub mod interface;
