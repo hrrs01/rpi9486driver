@@ -1,5 +1,5 @@
 [package]
-name = "il9486driver"
+name = "rpi9486driver"
 version = "0.1.0"
 edition = "2021"
 author = "hrrs01"

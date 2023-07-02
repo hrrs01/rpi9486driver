@@ -221,26 +221,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "il9486driver"
-version = "0.1.0"
-dependencies = [
- "cortex-m",
- "cortex-m-rt",
- "display-interface",
- "display-interface-spi",
- "embedded-graphics",
- "embedded-graphics-core",
- "embedded-hal",
- "fugit",
- "mipidsi",
- "panic-halt",
- "panic-probe",
- "rp-pico",
- "rp2040-pac",
- "rtt-target",
-]
-
-[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -445,6 +425,26 @@ dependencies = [
  "cortex-m",
  "cortex-m-rt",
  "vcell",
+]
+
+[[package]]
+name = "rpi9486driver"
+version = "0.1.0"
+dependencies = [
+ "cortex-m",
+ "cortex-m-rt",
+ "display-interface",
+ "display-interface-spi",
+ "embedded-graphics",
+ "embedded-graphics-core",
+ "embedded-hal",
+ "fugit",
+ "mipidsi",
+ "panic-halt",
+ "panic-probe",
+ "rp-pico",
+ "rp2040-pac",
+ "rtt-target",
 ]
 
 [[package]]
