@@ -1,15 +1,10 @@
 
 use cortex_m::delay::Delay;
-use embedded_hal::blocking::delay::DelayUs;
-use embedded_hal::spi::{Mode, MODE_0};
-use embedded_hal::{digital::v2::OutputPin, prelude::{_embedded_hal_blocking_spi_Write, _embedded_hal_blocking_delay_DelayUs}};
-use fugit::HertzU32;
-use rp2040_pac::RESETS;
-use rp_pico::hal::spi::Disabled;
-use rp_pico::pac::generic::Reg;
-use rp_pico::pac::spi1::sspcr0::SSPCR0_SPEC;
+
+use embedded_hal::{digital::v2::OutputPin, prelude::{_embedded_hal_blocking_spi_Write,}};
+
 use rp_pico::{hal::{Spi, spi::{Enabled, SpiDevice}, gpio::{Pin, PinId, Output, PushPull}}};
-use fugit::RateExtU32;
+
 
 
 
@@ -54,7 +49,6 @@ where
     }
 
     pub fn transfer(&mut self, word: u16){
-        let bytes = word.to_be_bytes();
         self.spi.write(&[word]).unwrap();
     }
 
@@ -65,7 +59,7 @@ where
     }
 
     pub fn transfer8(&mut self, byte: u8){
-        let mut word: u16 = (byte as u16) << 8 | (byte as u16);
+        let word: u16 = (byte as u16) << 8 | (byte as u16);
         self.wait_til_clear();
         self.spi.write(&[word]).unwrap();
     }

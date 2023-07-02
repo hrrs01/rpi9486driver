@@ -2,7 +2,6 @@
 #![no_main]
 
 
-use embedded_graphics_core::pixelcolor::Bgr565;
 use embedded_graphics_core::pixelcolor::Rgb565;
 use embedded_graphics_core::prelude::Point;
 use embedded_graphics_core::prelude::RgbColor;
